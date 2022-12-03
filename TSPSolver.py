@@ -360,4 +360,33 @@ class TSPSolver:
         algorithm</returns> 
     '''
     def fancy(self, time_allowance=60.0):
+        # Basic Genetic Algorithm
+        #    Initial population
+        #    Calculate fitness
+        #    Selecting best genes
+        #    Crossing over
+        #    Mutation to introduce variation ?? Could be 'creative' with this
+        # Also need to choose a cooling variable, where it stops after
+        # a certain number of iterations or the timeout
+        pass
+
+    def generateInitialPopulation(self):
+        # Austin
+        # Possibly create a separate function to create one tour, could be used later
+        pass
+
+    def calculateFitness(self, path):
+        # Austin
+        pass
+
+    def selectBestPaths(self):
+        # Austin
+        pass
+
+    def crossOver(self, parent1, parent2):
+        # Abigail
+        pass
+
+    def mutatePath(self, path):
+        # Gideon
         pass
