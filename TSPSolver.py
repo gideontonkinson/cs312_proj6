@@ -416,9 +416,17 @@ class TSPSolver:
         return new_population
 
     def crossOver(self, parent1, parent2):
-        # Abigail
-        pass
+        # do we care about the parent strings? then we can make a deep copy (will increase complexity)
+        swap_index = len(parent1)//4
+        parent1_swap = parent1[:swap_index]
+        parent2_swap = parent2[:swap_index]
 
+        parent1[:swap_index] = parent2_swap
+        parent2[:swap_index] = parent1_swap
+
+        return parent1, parent2
+
+    # do exploitive (local) search near the current solutions with mutation
     def mutatePath(self, path):
         # Gideon
         pass
