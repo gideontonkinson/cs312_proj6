@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from which_pyqt import PYQT_VER
+
 if PYQT_VER == 'PYQT5':
     from PyQt5.QtCore import QLineF, QPointF
 elif PYQT_VER == 'PYQT4':
@@ -8,21 +9,31 @@ elif PYQT_VER == 'PYQT4':
 else:
     raise Exception('Unsupported Version of PyQt: {}'.format(PYQT_VER))
 
-
 import time
 import numpy as np
 from TSPClasses import *
 import heapq
 import itertools
 
+
+def customSort(k):
+    if k is None:
+        return np.inf
+    else:
+        return k.cost
+
+
 class TSPSolver:
     def __init__(self, gui_view):
         self._scenario = None
+        self.population_size = 200
+        self.best_paths_size = 90
+        self.cooled = 100
 
     def setupWithScenario(self, scenario):
         self._scenario = scenario
 
-###################################################################################################
+    ###################################################################################################
     ''' <summary>
         This is the entry point for the default solver
         which just finds a valid random tour.  Note this could be used to find your
@@ -33,6 +44,7 @@ class TSPSolver:
         solution found, and three null values for fields not used for this
         algorithm</returns>
     '''
+
     # Finds a solution by random tour
     # Time Complexity: O(n!) - Worst Case / O(n) - Average Case
     # Space Complexity: O(n * n)
@@ -44,7 +56,7 @@ class TSPSolver:
         count = 0
         bssf = None
         start_time = time.time()
-        while not foundTour and time.time()-start_time < time_allowance:
+        while not foundTour and time.time() - start_time < time_allowance:
             # create a random permutation
             perm = np.random.permutation(ncities)
             route = []
@@ -66,7 +78,7 @@ class TSPSolver:
         results['pruned'] = None
         return results
 
-###################################################################################################
+    ###################################################################################################
     ''' <summary>
         This is the entry point for the greedy solver, which you must implement for
         the group project (but it is probably a good idea to just do it for the branch-and
@@ -78,6 +90,7 @@ class TSPSolver:
         solution found, and three null values for fields not used for this
         algorithm</returns>
     '''
+
     # Finds the best path by starting at each city and taking the smallest path out of the city
     # Input: time_allowance is how long in seconds the program can run, self which has n cities
     # Time Complexity: O(n * n * n) 
@@ -109,7 +122,7 @@ class TSPSolver:
         # Time Complexity: O(n * n * n)
         # Space Complexity: O(n * n * n)
         i = 0
-        while i < self.ncities and time.time()-start_time < time_allowance:
+        while i < self.ncities and time.time() - start_time < time_allowance:
             solution = self.greedyHelper(i, 0, paths.copy(), [])
             if solution != None:
                 count += 1
@@ -127,7 +140,7 @@ class TSPSolver:
         results['pruned'] = None
         return results
 
-###################################################################################################
+    ###################################################################################################
     # Finds the best path by starting at each city and taking the smallest path possible out of the city, recursive
     # Input: Starting city, cost so far, paths, route so far
     # Time Complexity: O(n * (3n + 3)) - n times (recursive) and then 3n + 3 for each iteration
@@ -137,7 +150,7 @@ class TSPSolver:
         # Base Case: If the tour is complete return
         if len(route) == self.ncities:
             return TSPSolution(route)
-        
+
         # O(1)
         route.append(self.cities[start])
 
@@ -149,7 +162,7 @@ class TSPSolver:
             return None
         cost += paths[start][minimum_row]
         paths[minimum_row][start] = math.inf
-        
+
         # O(2n) Infinity out the visited node so that it can't be returned to
         paths[start] = [math.inf for i in range(self.ncities)]
         paths[:, minimum_row] = [
@@ -159,7 +172,7 @@ class TSPSolver:
         # Space: O(n * n + n + 2)
         return self.greedyHelper(minimum_row, cost, paths, route)
 
-###################################################################################################
+    ###################################################################################################
     ''' <summary>
         This is the entry point for the branch-and-bound algorithm that you will implement
         </summary>
@@ -168,6 +181,7 @@ class TSPSolver:
         not include the initial BSSF), the best solution found, and three more ints:
         max queue size, total number of states created, and number of pruned states.</returns>
     '''
+
     # Finds the best path it can within the time limit before it returns the best solution found so far
     # Input: time_allowance is how long in seconds the program can run, self which has n cities
     # Time Complexity: O(n * n * n!) - Worst Case / O(n * n * b ^ n) - Average Case
@@ -191,7 +205,7 @@ class TSPSolver:
         # Time Complexity: O(n * n * n)
         # Space Complexity: O(n * n * n) 
         self.bssf = self.greedy(.1)['soln']
-        
+
         # If no path found try 5 random and select the best one (Max .4 seconds)
         # Time Complexity: O(5 * n!) - Worst Case / O(5 * n) - Average Case
         # Space Complexity: O(5 * n * n)
@@ -226,7 +240,7 @@ class TSPSolver:
         # Loops until there is nothing left in the queue or there is no more time
         # Time Complexity: O(n * n * n!) - Worst Case / O(n * n * b ^ n) - Average Case
         # Space Complexity: O(n * n * n!) - Worst Case / O(n * n * b ^ n) - Average Case
-        while len(self.queue) != 0 and time.time()-start_time < time_allowance:
+        while len(self.queue) != 0 and time.time() - start_time < time_allowance:
 
             # Time complexity: O(mlogm)
             tspNode = heapq.heappop(self.queue)
@@ -251,7 +265,7 @@ class TSPSolver:
         results['pruned'] = self.pruned
         return results
 
-###################################################################################################
+    ###################################################################################################
     # Finds the chilren of previous path that is not a complete tour
     # Input: start city which is the last in the route, cost so far, current paths, and the route so far
     # Time Complexity: O(n * (n * n + mlogm)) - Worst Case / O(b * (n * n + mlogm)) - Average Case
@@ -281,7 +295,7 @@ class TSPSolver:
                 else:
                     self.pruned += 1
 
-###################################################################################################
+    ###################################################################################################
     # Finds a child of previous path that is not a complete tour
     # Input: start city, destination city, cost so far, current paths, and the route so far
     # Time Complexity: O(n * n + 2n + 3)
@@ -300,7 +314,7 @@ class TSPSolver:
         paths[start] = [math.inf for i in range(self.ncities)]
         paths[:, dest] = [
             math.inf for i in range(self.ncities)]
-        
+
         # Reduce the matrix
         # Time Complexity: O(n * n)
         # Space Complexity: O(n * n)
@@ -308,7 +322,7 @@ class TSPSolver:
             cost, paths.copy())
         return TSPNode(cost, paths, route, len(route), dest)
 
-###################################################################################################
+    ###################################################################################################
     # Reduced each row and column to have one zero in each
     # Input: Previous cost and paths
     # Time Complexity: O(n * n)
@@ -346,11 +360,11 @@ class TSPSolver:
                     paths[i][j] = math.inf
                 else:
                     paths[i][j] = paths[i][j] - sub_paths_col[i][j]
-        
+
         # O(n * n + 1)
         return cost, paths
 
-###################################################################################################
+    ###################################################################################################
     ''' <summary>
         This is the entry point for the algorithm you'll write for your group project.
         </summary>
@@ -359,29 +373,47 @@ class TSPSolver:
         best solution found.  You may use the other three field however you like.
         algorithm</returns> 
     '''
+
     def fancy(self, time_allowance=60.0):
         # Basic Genetic Algorithm
         #    Initial population
-        #    Calculate fitness
-        #    Selecting best genes
-        #    Crossing over
-        #    Mutation to introduce variation ?? Could be 'creative' with this
+        population = self.generateInitialPopulation()
+        while self.cooled != 0:
+            #    Crossing over
+            #    Mutation to introduce variation ?? Could be 'creative' with this
+            #    Calculate fitness (not necessary, just cost of tour)
+            #    Selecting best genes
+            population = self.selectBestPaths(population)
+            self.cooled -= 1
         # Also need to choose a cooling variable, where it stops after
         # a certain number of iterations or the timeout
         pass
 
     def generateInitialPopulation(self):
-        # Austin
-        # Possibly create a separate function to create one tour, could be used later
-        pass
+        population = [None] * self.population_size  # Enough space to store the next generation
+        for i in range(self.population_size):
+            population[i] = self.generateRandomTour()
+        return population
 
-    def calculateFitness(self, path):
-        # Austin
-        pass
+    def generateRandomTour(self):
+        cities = self._scenario.getCities()
+        ncities = len(cities)
+        perm = np.random.permutation(ncities)
+        route = []
+        for i in range(ncities):
+            route.append(cities[perm[i]])
+        tour = TSPSolution(route)
+        return tour
 
-    def selectBestPaths(self):
-        # Austin
-        pass
+    def selectBestPaths(self, old_population):
+        old_population.sort(key=customSort)
+        new_population = [None] * self.population_size
+        for i in range(self.best_paths_size):
+            new_population[i] = old_population[i]
+        for i in range(self.best_paths_size, self.population_size):
+            # possible issue with having duplicates in the last 10 of new population
+            new_population[i] = old_population[random.choice(range(self.best_paths_size, self.population_size))]
+        return new_population
 
     def crossOver(self, parent1, parent2):
         # Abigail
