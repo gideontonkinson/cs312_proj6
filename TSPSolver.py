@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+from random import randint
 from which_pyqt import PYQT_VER
 
 if PYQT_VER == 'PYQT5':
@@ -396,12 +397,12 @@ class TSPSolver:
         return population
 
     def generateRandomTour(self):
-        cities = self._scenario.getCities()
-        ncities = len(cities)
-        perm = np.random.permutation(ncities)
+        self.cities = self._scenario.getCities()
+        self.ncities = len(self.cities)
+        perm = np.random.permutation(self.ncities)
         route = []
-        for i in range(ncities):
-            route.append(cities[perm[i]])
+        for i in range(self.ncities):
+            route.append(self.cities[perm[i]])
         tour = TSPSolution(route)
         return tour
 
@@ -428,5 +429,12 @@ class TSPSolver:
 
     # do exploitive (local) search near the current solutions with mutation
     def mutatePath(self, path):
-        # Gideon
-        pass
+        while True:
+            r = randint(1, self.ncities-1)
+            r1 = randint(1, self.ncities-1)
+            if r1 != r:
+                temp = path[r]
+                path[r] = path[r1]
+                path[r1] = temp
+                break
+        return path
