@@ -409,7 +409,8 @@ class TSPSolver:
 
     def generateInitialPopulation(self):
         population = [None] * self.expanded_population  # Enough space to store the next generation
-        for i in range(self.population_size):
+        population[0] = self.greedy()['soln']
+        for i in range(1, self.population_size):
             population[i] = self.generateRandomTour()
         return population
 
