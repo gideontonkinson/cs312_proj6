@@ -465,8 +465,8 @@ class TSPSolver:
     # do exploitative (local) search near the current solutions with mutation
     def mutatePath(self, tour):
         path = copy.deepcopy(tour.route)
-        total_iterations = int(self.ncities / 30) 
-        for _ in range(total_iterations + 1):
+        total_iterations = int(self.ncities / 30) + 1
+        for _ in range(total_iterations):
             while True:
                 r = randint(1, self.ncities-1)
                 r1 = randint(1, self.ncities-1)
