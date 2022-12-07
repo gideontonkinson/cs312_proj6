@@ -480,19 +480,6 @@ class TSPSolver:
 
     # do exploitative (local) search near the current solutions with mutation
     def mutatePath(self, tour):
-<<<<<<< Updated upstream
-        for _ in range(total_iterations):
-            while True:
-                r = randint(1, self.ncities-1)
-                r1 = randint(1, self.ncities-1)
-                if r1 != r:
-                    temp = path[r]
-                    path[r] = path[r1]
-                    path[r1] = temp
-                    break
-        new_cost = TSPSolution(path)
-        return new_cost
-=======
         path = tour.route
         while True:
             r = randint(1, self.ncities-1)
@@ -502,4 +489,3 @@ class TSPSolver:
                 path[r] = path[r1]
                 path[r1] = temp
                 break
->>>>>>> Stashed changes
