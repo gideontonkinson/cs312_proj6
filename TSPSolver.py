@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-
+import copy
 from random import randint
 from which_pyqt import PYQT_VER
 
@@ -26,10 +26,12 @@ def customSort(k):
 
 class TSPSolver:
     def __init__(self, gui_view):
+        self.ncities = None
+        self.cities = None
         self._scenario = None
-        self.population_size = 200
+        self.population_size = 100
+        self.expanded_population = 200
         self.best_paths_size = 90
-        self.cooled = 100
 
     def setupWithScenario(self, scenario):
         self._scenario = scenario
@@ -376,22 +378,37 @@ class TSPSolver:
     '''
 
     def fancy(self, time_allowance=60.0):
+        cooled = 10000
+        results = {}
+        start_time = time.time()
         # Basic Genetic Algorithm
         #    Initial population
         population = self.generateInitialPopulation()
-        while self.cooled != 0:
+        while cooled != 0 and time.time() - start_time < time_allowance:
             #    Crossing over
             #    Mutation to introduce variation ?? Could be 'creative' with this
+            for i in range(self.population_size):
+                population[i + self.population_size] = self.mutatePath(population[i])
             #    Calculate fitness (not necessary, just cost of tour)
             #    Selecting best genes
             population = self.selectBestPaths(population)
-            self.cooled -= 1
+            cooled -= 1
         # Also need to choose a cooling variable, where it stops after
         # a certain number of iterations or the timeout
-        pass
+        end_time = time.time()
+
+        best_tour = population[0]
+        results['cost'] = best_tour.cost
+        results['time'] = end_time - start_time
+        results['count'] = 0
+        results['soln'] = best_tour
+        results['max'] = 0
+        results['total'] = 0
+        results['pruned'] = 0
+        return results
 
     def generateInitialPopulation(self):
-        population = [None] * self.population_size  # Enough space to store the next generation
+        population = [None] * self.expanded_population  # Enough space to store the next generation
         for i in range(self.population_size):
             population[i] = self.generateRandomTour()
         return population
@@ -407,28 +424,46 @@ class TSPSolver:
         return tour
 
     def selectBestPaths(self, old_population):
+        new_population = [None] * self.expanded_population
         old_population.sort(key=customSort)
-        new_population = [None] * self.population_size
-        for i in range(self.best_paths_size):
-            new_population[i] = old_population[i]
+        population = copy.deepcopy(old_population)
+        new_population[:self.best_paths_size] = population[:self.best_paths_size]
         for i in range(self.best_paths_size, self.population_size):
-            # possible issue with having duplicates in the last 10 of new population
-            new_population[i] = old_population[random.choice(range(self.best_paths_size, self.population_size))]
+            new_population[i] = population[randint(self.best_paths_size, self.expanded_population - 1)]
         return new_population
 
     def crossOver(self, parent1, parent2):
+        path1 = copy.deepcopy(parent1.route)
+        path2 = copy.deepcopy(parent2.route)
         # do we care about the parent strings? then we can make a deep copy (will increase complexity)
-        swap_index = len(parent1)//4
-        parent1_swap = parent1[:swap_index]
-        parent2_swap = parent2[:swap_index]
+        swap_index = self.ncities//4
+        parent1_swap = path1[:swap_index]
+        parent2_swap = path2[:swap_index]
 
-        parent1[:swap_index] = parent2_swap
-        parent2[:swap_index] = parent1_swap
+        path1[:swap_index] = parent2_swap
+        path2[:swap_index] = parent1_swap
 
-        return parent1, parent2
+        new_parent1 = TSPSolution(copy.deepcopy(path1))
+        new_parent2 = TSPSolution(copy.deepcopy(path2))
 
-    # do exploitive (local) search near the current solutions with mutation
-    def mutatePath(self, path):
+        for i in range(self.ncities):
+            temp = path1[0]
+            del path1[0]
+            if temp in path1:
+                new_parent1.cost = math.inf
+                break
+        for i in range(self.ncities):
+            temp = path2[0]
+            del path2[0]
+            if temp in path2:
+                new_parent2.cost = math.inf
+                break
+
+        return new_parent1, new_parent2
+
+    # do exploitative (local) search near the current solutions with mutation
+    def mutatePath(self, tour):
+        path = copy.deepcopy(tour.route)
         while True:
             r = randint(1, self.ncities-1)
             r1 = randint(1, self.ncities-1)
@@ -437,4 +472,5 @@ class TSPSolver:
                 path[r] = path[r1]
                 path[r1] = temp
                 break
-        return path
+        new_cost = TSPSolution(path)
+        return new_cost
